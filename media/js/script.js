@@ -11,23 +11,21 @@ jQuery(document).ready(function () {
 
     var temp=RadicalForm.DangerClass.split(" ");
     RadicalForm.DangerClasses=temp.join(".");
-    jQuery("body").on("keypress","form input.required."+RadicalForm.DangerClasses, function (e) {
+    jQuery("body").on("keypress","form input."+RadicalForm.DangerClasses, function (e) {
         jQuery(this).removeClass(RadicalForm.DangerClass);
     })
-        .on("keypress","form textarea.required."+RadicalForm.DangerClasses, function (e) {
+        .on("keypress","form textarea."+RadicalForm.DangerClasses, function (e) {
         jQuery(this).removeClass(RadicalForm.DangerClass);
     })
-        .on("change","form select.required."+RadicalForm.DangerClasses, function (e) {
+        .on("change","form select."+RadicalForm.DangerClasses, function (e) {
         jQuery(this).removeClass(RadicalForm.DangerClass);
     });
-
 
     // file upload
     jQuery("input[type='file'].rf-upload-button").on("change", function (e) {
             if(!jQuery(this).attr("name")) {console.log("RadicalForm: There is no 'name' attribute for rf-upload-button!"); return; }
 
-            var that = jQuery(this).closest('form'),
-                textForUploadButton = jQuery(this).siblings('.rf-upload-button-text')[0],
+            var textForUploadButton = jQuery(this).siblings('.rf-upload-button-text')[0],
                 tmp = jQuery(textForUploadButton).html(),
                 formData = new FormData();
             formData.append(this.name, this.files[0]);
@@ -38,7 +36,7 @@ jQuery(document).ready(function () {
                     .prop('disabled', true);
 
                 jQuery.ajax({
-                    url: 'index.php?option=com_ajax&plugin=radicalform&format=json&group=system&file=1&size=' + this.files[0].size,
+                    url: RadicalForm.Base+'/index.php?option=com_ajax&plugin=radicalform&format=json&group=system&file=1&size=' + this.files[0].size,
                     type: 'post',
                     contentType: false,
                     processData: false,
@@ -80,17 +78,18 @@ jQuery(document).ready(function () {
             needReturn,
             inputArray = jQuery(self).serializeArray();
         if(inputArray.length<6) {
-            alert("there is no name attributes in your form!");
+            alert("there is no name attribute for input! Please add name to your input tag!");
             needReturn=true;
         }
         RadicalForm.FormFields=[];
         jQuery(self).find("[name]").removeClass(RadicalForm.DangerClass);
         // let's see the fields of form
         for (var i = 0; i < inputArray.length; i++) {
-
             // if field is empty
-            if (jQuery(self).find("[name='" + inputArray[i].name + "']").hasClass('required') && jQuery.trim(inputArray[i].value) == "") {
-                RadicalForm.FormFields[i]=jQuery(self).find("[name='" + inputArray[i].name + "']").get(0);
+            var currentField=jQuery(self).find("[name='" + inputArray[i].name + "']");
+
+            if ((currentField.hasClass('required') && jQuery.trim(inputArray[i].value) === "") || (!currentField.get(0).checkValidity())) {
+                RadicalForm.FormFields[i]=currentField.get(0);
                 needReturn = true; // need to abandon the send
             }
         }
@@ -116,7 +115,7 @@ jQuery(document).ready(function () {
             }
             jQuery.ajax({
                 type: "POST",
-                url: "index.php?option=com_ajax&plugin=radicalform&format=json&group=system",
+                url: RadicalForm.Base+"/index.php?option=com_ajax&plugin=radicalform&format=json&group=system",
                 dataType: "json",
                 data: jQuery(self).serialize(),
                 complete: function(data, status) {
@@ -137,19 +136,25 @@ jQuery(document).ready(function () {
                     }
 
 	                if(jQuery(self2).data("rfCall")===undefined) {
-	                    rfCall_2(message);
+	                    rfCall_2(message,self2);
 	                } else {
 	                    rfCall=String(jQuery(self2).data("rfCall"));
 	                    for (var i=0;i<rfCall.length;i++) {
 	                        switch (rfCall[i]) {
 	                            case "1":
+	                                try {
 	                                rfCall_1(message,self2);
+                                    } catch (e) { console.error('Radical Form JS Code: ', e); }
 	                                break;
 	                            case "2":
+                                    try {
 	                                rfCall_2(message,self2);
+                                    } catch (e) { console.error('Radical Form JS Code: ', e); }
 	                                break;
 	                            case "3":
+                                    try {
 	                                rfCall_3(message,self2);
+                                    } catch (e) { console.error('Radical Form JS Code: ', e); }
 	                        }
 
 	                    }
